@@ -6,8 +6,8 @@ import msvcrt
 # controls are
 # w = up, s = down, a = left, d = right, q = quit
 
-WIDTH = 40
-HEIGHT = 20
+WIDTH = 50
+HEIGHT = 30
 
 # directions
 UP = (0, -1)
