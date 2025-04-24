@@ -106,38 +106,43 @@ class SnakeGame:
             if msvcrt.kbhit():
                 try:
                     key = msvcrt.getch().decode("utf-8").lower()
-                    if key == "w":
-                        self.change_direction(UP)
-                    elif key == "s":
-                        self.change_direction(DOWN)
-                    elif key == "a":
-                        self.change_direction(LEFT)
-                    elif key == "d":
-                        self.change_direction(RIGHT)
-                    elif key == "q":
-                        self.game_over = True
-                        break
-                    elif key == "p":
-                        paused = not paused
-                        self.message = (
-                            "Game paused. Press P again to resume."
-                            if paused
-                            else "Game resumed!"
-                        )
-                    else:
-                        self.message = f"Invalid key: '{key}'. Use W,A,S,D to move, P to pause, Q to quit."
                 except UnicodeDecodeError:
                     self.message = "Invalid key pressed!"
+                    key = None
 
-            self.draw()
+                if key == "w":
+                    self.change_direction(UP)
+                elif key == "s":
+                    self.change_direction(DOWN)
+                elif key == "a":
+                    self.change_direction(LEFT)
+                elif key == "d":
+                    self.change_direction(RIGHT)
+                elif key == "q":
+                    self.game_over = True
+                    break
+                elif key == "p":
+                    paused = not paused
+                    self.message = (
+                        "Game paused. Press P again to resume."
+                        if paused
+                        else "Game resumed!"
+                    )
+                else:
+                    if key:
+                        self.message = f"Invalid key: '{key}'. Use W,A,S,D to move, P to pause, Q to quit."
 
             if not paused:
                 self.step()
-                # speed adjusts with score
-                time.sleep(max(0.05, 0.2 - (self.score * 0.005)))
-            else:
-                print("Game over! Final score:", self.score)
-                time.sleep(0.1)
+
+            self.draw()
+
+            # Control speed (slower when score is low)
+            time.sleep(max(0.05, 0.2 - self.score * 0.005))
+
+        # After loop exits
+        clear_screen()
+        print("Game Over! Final Score:", self.score)
         msvcrt.getch()
 
 
@@ -147,5 +152,5 @@ if __name__ == "__main__":
         game.run()
     except Exception as e:
         clear_screen()
-        print(f"An unexpected error occured. '{e}'")
+        print(f"An unexpected error occured. {e}")
         msvcrt.getch()
