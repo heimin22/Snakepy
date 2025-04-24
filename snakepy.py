@@ -53,3 +53,39 @@ class SnakeGame:
         new_head = (head_x + dx, head_y + dy)
 
         # collisions
+        if (
+            new_head[0] <= 0
+            or new_head[0] >= self.width - 1
+            or new_head[1] <= 0
+            or new_head[1] >= self.height - 1
+            or new_head in self.snake
+        ):
+            self.game_over = True
+            return
+
+        # move snake
+        self.snake.insert(0, new_head)
+        if new_head == self.food:
+            self.score += 1
+            self.spawn_food()
+        else:
+            self.snake.pop()
+
+    def draw(self):
+        clear_screen()
+        # top border
+        print("#" * self.width)
+        for y in range(1, self.height - 1):
+            row = ""
+            for x in range(self.width):
+                if (x, y) == self.snake[0]:
+                    row += "O"
+                elif (x, y) in self.snake:
+                    row += "o"
+                elif (x, y) == self.food:
+                    row += "*"
+                elif x == 0 or x == self.width - 1:
+                    row += "#"
+                else:
+                    row += " "
+            print(row)
