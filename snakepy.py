@@ -32,6 +32,7 @@ class SnakeGame:
         self.spawn_food()
         self.score = 0
         self.game_over = False
+        self.message = ""
 
     def spawn_food(self):
         while True:
@@ -46,6 +47,8 @@ class SnakeGame:
         opposite = (-self.direction[0], -self.direction[1])
         if new_dir != opposite:
             self.direction = new_dir
+        else:
+            self.message = "Cannot move in opposite direction"
 
     def step(self):
         head_x, head_y = self.snake[0]
@@ -133,9 +136,8 @@ class SnakeGame:
                 # speed adjusts with score
                 time.sleep(max(0.05, 0.2 - (self.score * 0.005)))
             else:
+                print("Game over! Final score:", self.score)
                 time.sleep(0.1)
-
-        print("Game # pyright:ver! Final score:", self.score)
         msvcrt.getch()
 
 
