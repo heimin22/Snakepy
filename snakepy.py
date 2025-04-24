@@ -89,3 +89,35 @@ class SnakeGame:
                 else:
                     row += " "
             print(row)
+        print("#" * self.width)
+        print(f"Score: {self.score}")
+        print("controls: W=Up, S=Down, A=Left, D=Right, Q=Quit")
+
+    def run(self):
+        while not self.game_over:
+            # handle input
+            if msvcrt.kbhit():
+                key = msvcrt.getch().decode("utf-8").lower()
+                if key == "w":
+                    self.change_direction(UP)
+                elif key == "s":
+                    self.change_direction(DOWN)
+                elif key == "a":
+                    self.change_direction(LEFT)
+                elif key == "d":
+                    self.change_direction(RIGHT)
+                elif key == "q":
+                    self.game_over = True
+                    break
+
+            self.step()
+            self.draw()
+            # speed adjusts with score
+            time.sleep(max(0.05, 0.2 - (self.score * 0.005)))
+
+        print("Game over! Final score: ", self.score)
+
+
+if __name__ == "__main__":
+    game = SnakeGame(WIDTH, HEIGHT)
+    game.run()
