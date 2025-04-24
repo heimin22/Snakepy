@@ -41,3 +41,15 @@ class SnakeGame:
             )
             if self.food not in self.snake:
                 break
+
+    def change_direction(self, new_dir):
+        opposite = (-self.direction[0], -self.direction[1])
+        if new_dir != opposite:
+            self.direction = new_dir
+
+    def step(self):
+        head_x, head_y = self.snake[0]
+        dx, dy = self.direction
+        new_head = (head_x + dx, head_y + dy)
+
+        # collisions
