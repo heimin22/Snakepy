@@ -5,9 +5,6 @@ import msvcrt
 import pygame
 import math
 
-# controls are
-# w = up, s = down, a = left, d = right, q = quit
-
 pygame.init()
 
 white = (255, 255, 255)
@@ -53,10 +50,9 @@ def is_point_in_polygon(x, y, sides, radius):
     return r <= r_max
 
 def get_sides():
-    input_received = False
-    sides = 4
-
-    while not input_received:
+    pygame.event.clear()
+    sides = 3
+    while True:
         dis.fill(blue)
         message("Enter the number of sides (3-8): ", white)
         message("Press number (3-8)", white, 50, "small")
@@ -66,19 +62,26 @@ def get_sides():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key in [pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    quit()
+                if pygame.K_3 <= event.key <= pygame.K_8:
                     sides = event.key - pygame.K_0
-                    input_received = True
-                    return sides
-        
-        pygame.time.delay(100)
+                    if 3 <= sides <= 8:
+                        return sides
+                elif pygame.K_KP3 <= event.key <= pygame.K_KP8:
+                    sides = event.key - pygame.K_KP0
+                    if 3 <= sides <= 8:
+                        return sides
 
-    return sides
+        clock.tick(30)
 
 def gameLoop():
     try:
         sides = get_sides()
+        if sides < 3:
+            sides = 3
     except pygame.error:
         pygame.quit()
         quit()
@@ -107,7 +110,6 @@ def gameLoop():
         while game_close:
             dis.fill(blue)
             message("You Lost! Press Q-Quit or C-Play Again", red)
-
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -155,8 +157,10 @@ def gameLoop():
             angle = 2 * math.pi * i / sides
             x = dis_width / 2 + radius * math.cos(angle)
             y = dis_height / 2 + radius * math.sin(angle)
-            points.append((x, y))
-        pygame.draw.polygon(dis, white, points, 2)
+            points.append((int(x), int(y)))
+
+        if len(points) >= 3:
+            pygame.draw.polygon(dis, white, points, 2)
 
         pygame.draw.rect(dis, green, [foodx, foody, snake_block, snake_block])
         snake_Head = []
