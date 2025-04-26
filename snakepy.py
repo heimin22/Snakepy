@@ -3,174 +3,91 @@ import random
 import time
 import msvcrt
 import pygame
+import math
 
 # controls are
 # w = up, s = down, a = left, d = right, q = quit
 
 pygame.init()
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
+white = (255, 255, 255)
+black = (0, 0, 0)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
 
-DIS_WIDTH = 800
-DIS_HEIGHT = 600
+dis_width = 800
+dis_height = 600
 
-DIS = pygame.display.set_mode((DIS_WIDTH, DIS_HEIGHT))
+dis = pygame.display.set_mode((dis_width, dis_height))
 pygame.display.set_caption("Snake Game")
 
-WIDTH = 50
-HEIGHT = 30
+clock = pygame.time.Clock()
 
-# directions
-UP = (0, -1)
-DOWN = (0, 1)
-LEFT = (-1, 0)
-RIGHT = (1, 0)
+snake_block = 10
+snake_speed = 15
 
-
-def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
+font_style = pygame.font.SysFont(None, 50)
+small_font = pygame.font.SysFont(None, 35)
 
 
-class SnakeGame:
-    def get_user_input():
-        width = int(input("Enter the width of the game window: "))
-        height = int(input("Enter the height of the game window: "))
-        sides = int(input("Enter the number of sides for the shape (3-8): "))
+def our_snake(snake_block, snake_list):
+    for x in snake_list:
+        pygame.draw.rect(dis, black, [x[0], x[1], snake_block, snake_block])
 
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.reset()
+def message(msg, color, y_displace = 0, size = "normal"):
+    if size == "normal":
+        mesg = font_style.render(msg, True, color)
+    else:
+        mesg = small_font.render(msg, True, color)
+    dis.blit(mesg, [dis_width / 6, dis_height / 3 + y_displace])
 
-    def reset(self):
-        self.snake = [(self.width // 2, self.height // 2)]
-        self.direction = RIGHT
-        self.spawn_food()
-        self.score = 0
-        self.game_over = False
-        self.message = ""
+def is_point_in_polygon(x, y, sides, radius):
+    center_x = dis_width / 2
+    center_y = dis_height / 2
+    angle = math.atan2(y - center_y, x - center_x)
+    r = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
+    theta = 2 * math.pi / sides
+    R = radius / math.cos(math.pi / sides)
+    r_max = R / math.cos(angle % theta - theta / 2)
+    return r <= r_max
 
-    def spawn_food(self):
-        while True:
-            self.food = (
-                random.randint(1, self.width - 2),
-                random.randint(1, self.height - 2),
-            )
-            if self.food not in self.snake:
-                break
+def get_sides():
+    input_received = False
+    sides = 4
 
-    def change_direction(self, new_dir):
-        opposite = (-self.direction[0], -self.direction[1])
-        if new_dir != opposite:
-            self.direction = new_dir
-        else:
-            self.message = "Cannot move in opposite direction"
+    while not input_received:
+        dis.fill(blue)
+        message("Enter the number of sides (3-8): ", white) 
+        message("Press number (3-8)", white, 50, "small")
+        pygame.display.update()
 
-    def step(self):
-        head_x, head_y = self.snake[0]
-        dx, dy = self.direction
-        new_head = (head_x + dx, head_y + dy)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.unicode in "34567":
+                    sides = int(event.unicode)
+                    input_received = True
+                elif event.key == pygame.K_8:
+                    sides = 8
+                    input_received = True
+            elif event.key == pygame.QUIT:
+                pygame.quit()
+                quit()
 
-        # collisions
-        if (
-            new_head[0] <= 0
-            or new_head[0] >= self.width - 1
-            or new_head[1] <= 0
-            or new_head[1] >= self.height - 1
-            or new_head in self.snake
-        ):
-            self.game_over = True
-            return
+    return sides
 
-        # move snake
-        self.snake.insert(0, new_head)
-        if new_head == self.food:
-            self.score += 1
-            self.spawn_food()
-        else:
-            self.snake.pop()
+def gameLoop():
+    sides = get_sides()
+    radius = min(dis_width, dis_height) * 0.4
 
-    def draw(self):
-        clear_screen()
-        # top border
-        print("#" * self.width)
-        for y in range(1, self.height - 1):
-            row = ""
-            for x in range(self.width):
-                if (x, y) == self.snake[0]:
-                    row += "O"
-                elif (x, y) in self.snake:
-                    row += "o"
-                elif (x, y) == self.food:
-                    row += "*"
-                elif x == 0 or x == self.width - 1:
-                    row += "#"
-                else:
-                    row += " "
-            print(row)
-        print("#" * self.width)
-        print(f"Score: {self.score}")
-        if self.message:
-            print(f"message: {self.message}")
-            self.message = ""
-        print("controls: W=Up, S=Down, A=Left, D=Right, Q=Quit, P=Pause")
+    game_over = False
+    game_close = False
 
-    def run(self):
-        paused = False
-        while not self.game_over:
-            # handle input
-            if msvcrt.kbhit():
-                try:
-                    key = msvcrt.getch().decode("utf-8").lower()
-                except UnicodeDecodeError:
-                    self.message = "Invalid key pressed!"
-                    key = None
+    x1 = dis_width / 2
+    y1 = dis_height / 2
 
-                if key == "w":
-                    self.change_direction(UP)
-                elif key == "s":
-                    self.change_direction(DOWN)
-                elif key == "a":
-                    self.change_direction(LEFT)
-                elif key == "d":
-                    self.change_direction(RIGHT)
-                elif key == "q":
-                    self.game_over = True
-                    break
-                elif key == "p":
-                    paused = not paused
-                    self.message = (
-                        "Game paused. Press P again to resume."
-                        if paused
-                        else "Game resumed!"
-                    )
-                else:
-                    if key:
-                        self.message = f"Invalid key: '{key}'. Use W,A,S,D to move, P to pause, Q to quit."
+    x1_change = 0
+    y1_change = 0
 
-            if not paused:
-                self.step()
-
-            self.draw()
-
-            # Control speed (slower when score is low)
-            time.sleep(max(0.05, 0.2 - self.score * 0.005))
-
-        # After loop exits
-        clear_screen()
-        print("Game Over! Final Score:", self.score)
-        msvcrt.getch()
-
-
-if __name__ == "__main__":
-    try:
-        game = SnakeGame(WIDTH, HEIGHT)
-        game.run()
-    except Exception as e:
-        clear_screen()
-        print(f"An unexpected error occured. {e}")
-        msvcrt.getch()
+    snake_List = []
+    Length_of_snake = 1
