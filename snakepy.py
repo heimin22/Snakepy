@@ -58,26 +58,31 @@ def get_sides():
 
     while not input_received:
         dis.fill(blue)
-        message("Enter the number of sides (3-8): ", white) 
+        message("Enter the number of sides (3-8): ", white)
         message("Press number (3-8)", white, 50, "small")
         pygame.display.update()
 
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.unicode in "34567":
-                    sides = int(event.unicode)
-                    input_received = True
-                elif event.key == pygame.K_8:
-                    sides = 8
-                    input_received = True
-            elif event.key == pygame.QUIT:
+            if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key in [pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8]:
+                    sides = event.key - pygame.K_0
+                    input_received = True
+                    return sides
+        
+        pygame.time.delay(100)
 
     return sides
 
 def gameLoop():
-    sides = get_sides()
+    try:
+        sides = get_sides()
+    except pygame.error:
+        pygame.quit()
+        quit()
+
     radius = min(dis_width, dis_height) * 0.4
 
     game_over = False
@@ -116,7 +121,13 @@ def gameLoop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
+                game_close = False
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    game_over = True
+                    game_close = False
+                if event.key == pygame.K_c:
+                    return gameLoop()
                 if event.key == pygame.K_LEFT:
                     x1_change = -snake_block
                     y1_change = 0
@@ -140,7 +151,7 @@ def gameLoop():
         dis.fill(blue)
 
         points = []
-        for i in range(sides)
+        for i in range(sides):
             angle = 2 * math.pi * i / sides
             x = dis_width / 2 + radius * math.cos(angle)
             y = dis_height / 2 + radius * math.sin(angle)
@@ -173,10 +184,9 @@ def gameLoop():
 
         clock.tick(snake_speed)
     
-    pygame.quit()
-    quit()
 
-gameLoop()
+if __name__ == "__main__":
+    gameLoop()
 
 
 
