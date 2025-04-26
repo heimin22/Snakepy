@@ -2,9 +2,24 @@ import os
 import random
 import time
 import msvcrt
+import pygame
 
 # controls are
 # w = up, s = down, a = left, d = right, q = quit
+
+pygame.init()
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
+DIS_WIDTH = 800
+DIS_HEIGHT = 600
+
+DIS = pygame.display.set_mode((DIS_WIDTH, DIS_HEIGHT))
+pygame.display.set_caption("Snake Game")
 
 WIDTH = 50
 HEIGHT = 30
@@ -21,6 +36,11 @@ def clear_screen():
 
 
 class SnakeGame:
+    def get_user_input():
+        width = int(input("Enter the width of the game window: "))
+        height = int(input("Enter the height of the game window: "))
+        sides = int(input("Enter the number of sides for the shape (3-8): "))
+
     def __init__(self, width, height):
         self.width = width
         self.height = height
