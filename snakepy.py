@@ -39,19 +39,67 @@ def message(msg, color, y_displace = 0, size = "normal"):
         mesg = small_font.render(msg, True, color)
     dis.blit(mesg, [dis_width / 6, dis_height / 3 + y_displace])
 
-def is_point_in_polygon(x, y, sides, radius):
-    center_x = dis_width / 2
-    center_y = dis_height / 2
-    angle = math.atan2(y - center_y, x - center_x)
-    r = math.sqrt((x - center_x) ** 2 + (y - center_y) ** 2)
-    theta = 2 * math.pi / sides
-    R = radius / math.cos(math.pi / sides)
-    r_max = R / math.cos(angle % theta - theta / 2)
-    return r <= r_max
+def generate_random_shape_points(sides, margin=50):
+    points = []
+    # Define the boundaries with margin from window edges
+    min_x = margin
+    max_x = dis_width - margin
+    min_y = margin
+    max_y = dis_height - margin
+    
+    # Start with a point near the top-left
+    current_x = random.randint(min_x, max_x // 2)
+    current_y = random.randint(min_y, max_y // 2)
+    points.append((current_x, current_y))
+    
+    remaining_sides = sides - 1
+    last_direction = None  # Track last direction to ensure alternating horizontal/vertical lines
+    
+    while remaining_sides > 0:
+        # Alternate between horizontal and vertical movements
+        if last_direction in [None, "vertical"]:
+            # Move horizontally
+            new_x = random.randint(min_x, max_x)
+            new_y = current_y
+            last_direction = "horizontal"
+        else:
+            # Move vertically
+            new_x = current_x
+            new_y = random.randint(min_y, max_y)
+            last_direction = "vertical"
+        
+        # Add the new point
+        current_x, current_y = new_x, new_y
+        points.append((current_x, current_y))
+        remaining_sides -= 1
+    
+    # Connect back to the first point with appropriate straight lines
+    if last_direction == "horizontal":
+        # Add vertical line to get back to starting y
+        points.append((current_x, points[0][1]))
+    else:
+        # Add horizontal line to get back to starting x
+        points.append((points[0][0], current_y))
+    
+    return points
+
+def is_point_in_polygon(x, y, points):
+    n = len(points)
+    inside = False
+    
+    j = n - 1
+    for i in range(n):
+        if ((points[i][1] > y) != (points[j][1] > y) and
+            x < (points[j][0] - points[i][0]) * (y - points[i][1]) /
+            (points[j][1] - points[i][1]) + points[i][0]):
+            inside = not inside
+        j = i
+    
+    return inside
 
 def get_sides():
     current_input = ""
-    
+
     while True:
         dis.fill(blue)
         message("Enter the number of sides (3-8): ", white)
@@ -82,6 +130,26 @@ def get_sides():
 
         clock.tick(30)
 
+def spawn_food(shape_points):
+    # Find boundaries of the shape
+    min_x = min(p[0] for p in shape_points)
+    max_x = max(p[0] for p in shape_points)
+    min_y = min(p[1] for p in shape_points)
+    max_y = max(p[1] for p in shape_points)
+    
+    attempts = 0
+    while attempts < 100:
+        # Generate food position aligned with snake grid
+        fx = round(random.randint(min_x + 10, max_x - 10) / 10.0) * 10.0
+        fy = round(random.randint(min_y + 10, max_y - 10) / 10.0) * 10.0
+        
+        if is_point_in_polygon(fx, fy, shape_points):
+            return fx, fy
+        attempts += 1
+    
+    # Fallback to center if no valid position found
+    return dis_width/2, dis_height/2
+
 def gameLoop():
     try:
         sides = get_sides()
@@ -91,13 +159,17 @@ def gameLoop():
         pygame.quit()
         quit()
 
-    radius = min(dis_width, dis_height) * 0.4
-
+    # Generate shape points
+    shape_points = generate_random_shape_points(sides)
+    
     game_over = False
     game_close = False
 
-    x1 = dis_width / 2
-    y1 = dis_height / 2
+    # Start snake in the middle of the shape
+    x1 = sum(p[0] for p in shape_points) / len(shape_points)
+    y1 = sum(p[1] for p in shape_points) / len(shape_points)
+    x1 = round(x1 / 10.0) * 10.0  # Align to grid
+    y1 = round(y1 / 10.0) * 10.0  # Align to grid
 
     x1_change = 0
     y1_change = 0
@@ -105,13 +177,7 @@ def gameLoop():
     snake_List = []
     Length_of_snake = 1
 
-    foodx = dis_width / 2
-    foody = dis_height / 2
-    while True:
-        foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
-        foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
-        if is_point_in_polygon(foodx, foody, sides, radius):
-            break
+    foodx, foody = spawn_food(shape_points)
 
     while not game_over:
         while game_close:
@@ -144,23 +210,23 @@ def gameLoop():
                     y1_change = snake_block
                     x1_change = 0
 
-        if not is_point_in_polygon(x1 + x1_change, y1 + y1_change, sides, radius):
+
+        next_x = x1 + x1_change
+        next_y = y1 + y1_change
+
+        # Check if next position is inside the shape
+        if not is_point_in_polygon(next_x, next_y, shape_points):
             game_close = True
 
-        x1 += x1_change
-        y1 += y1_change
+        x1 = next_x
+        y1 = next_y
         dis.fill(blue)
 
-        points = []
-        for i in range(sides):
-            angle = 2 * math.pi * i / sides
-            x = dis_width / 2 + radius * math.cos(angle)
-            y = dis_height / 2 + radius * math.sin(angle)
-            points.append((int(x), int(y)))
+        # Draw the shape with thicker border
+        pygame.draw.polygon(dis, white, shape_points, 8)  # Increased thickness to 8
 
-        pygame.draw.polygon(dis, white, points, 2)
         pygame.draw.rect(dis, green, [foodx, foody, snake_block, snake_block])
-        
+
         snake_Head = []
         snake_Head.append(x1)
         snake_Head.append(y1)
@@ -176,15 +242,11 @@ def gameLoop():
         pygame.display.update()
 
         if abs(x1 - foodx) < snake_block and abs(y1 - foody) < snake_block:
-            while True:
-                foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
-                foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
-                if is_point_in_polygon(foodx, foody, sides, radius):
-                    break
+            foodx, foody = spawn_food(shape_points)
             Length_of_snake += 1
 
-        clock.tick(snake_speed)    
-    
+        clock.tick(snake_speed)
+
 
 if __name__ == "__main__":
     gameLoop()
