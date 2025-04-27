@@ -50,12 +50,13 @@ def is_point_in_polygon(x, y, sides, radius):
     return r <= r_max
 
 def get_sides():
-    pygame.event.clear()
-    sides = 3
+    current_input = ""
+    
     while True:
         dis.fill(blue)
         message("Enter the number of sides (3-8): ", white)
-        message("Press number (3-8)", white, 50, "small")
+        message(current_input, white, 50, "small")
+        message("Press Enter to confirm", white, 100, "small")
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -66,14 +67,18 @@ def get_sides():
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     quit()
-                if pygame.K_3 <= event.key <= pygame.K_8:
-                    sides = event.key - pygame.K_0
-                    if 3 <= sides <= 8:
-                        return sides
-                elif pygame.K_KP3 <= event.key <= pygame.K_KP8:
-                    sides = event.key - pygame.K_KP0
-                    if 3 <= sides <= 8:
-                        return sides
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                    try:
+                        sides = int(current_input)
+                        if 3 <= sides <= 8:
+                            return sides
+                    except ValueError:
+                        current_input = ""
+                elif event.key == pygame.K_BACKSPACE:
+                    current_input = current_input[:-1]
+                elif event.unicode.isdigit():
+                    if len(current_input) < 1:
+                        current_input += event.unicode
 
         clock.tick(30)
 
