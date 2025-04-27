@@ -105,10 +105,12 @@ def gameLoop():
     snake_List = []
     Length_of_snake = 1
 
+    foodx = dis_width / 2
+    foody = dis_height / 2
     while True:
         foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
         foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
-        if not is_point_in_polygon(foodx, foody, sides, radius):
+        if is_point_in_polygon(foodx, foody, sides, radius):
             break
 
     while not game_over:
@@ -128,29 +130,21 @@ def gameLoop():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
-                game_close = False
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q:
-                    game_over = True
-                    game_close = False
-                if event.key == pygame.K_c:
-                    return gameLoop()
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT and x1_change == 0:
                     x1_change = -snake_block
                     y1_change = 0
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_RIGHT and x1_change == 0:
                     x1_change = snake_block
                     y1_change = 0
-                elif event.key == pygame.K_UP:
+                elif event.key == pygame.K_UP and y1_change == 0:
                     y1_change = -snake_block
                     x1_change = 0
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_DOWN and y1_change == 0:
                     y1_change = snake_block
                     x1_change = 0
 
-        next_x = x1 + x1_change
-        next_y = y1 + y1_change
-        if not is_point_in_polygon(next_x, next_y, sides, radius):
+        if not is_point_in_polygon(x1 + x1_change, y1 + y1_change, sides, radius):
             game_close = True
 
         x1 += x1_change
@@ -164,10 +158,9 @@ def gameLoop():
             y = dis_height / 2 + radius * math.sin(angle)
             points.append((int(x), int(y)))
 
-        if len(points) >= 3:
-            pygame.draw.polygon(dis, white, points, 2)
-
+        pygame.draw.polygon(dis, white, points, 2)
         pygame.draw.rect(dis, green, [foodx, foody, snake_block, snake_block])
+        
         snake_Head = []
         snake_Head.append(x1)
         snake_Head.append(y1)
@@ -180,10 +173,9 @@ def gameLoop():
                 game_close = True
 
         our_snake(snake_block, snake_List)
-
         pygame.display.update()
 
-        if x1 == foodx and y1 == foody:
+        if abs(x1 - foodx) < snake_block and abs(y1 - foody) < snake_block:
             while True:
                 foodx = round(random.randrange(0, dis_width - snake_block) / 10.0) * 10.0
                 foody = round(random.randrange(0, dis_height - snake_block) / 10.0) * 10.0
@@ -191,7 +183,7 @@ def gameLoop():
                     break
             Length_of_snake += 1
 
-        clock.tick(snake_speed)
+        clock.tick(snake_speed)    
     
 
 if __name__ == "__main__":
